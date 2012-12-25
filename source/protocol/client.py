@@ -5,7 +5,7 @@ import os
 import random
 import re
 import requests
-from encrypt import QQEncryptHelper
+import encrypt
 
 TEMP_VERIFY_JPG = 'temp_verify.jpg'
 
@@ -20,11 +20,14 @@ CHECK_RESPONSE_REGEX = r'''ptui_checkVC\('0','(.*)','(.*)'\);'''
 LOGIN_CHECK_URL = 'http://check.ptlogin2.qq.com/check?uin=%(account)s&appid=1003903'
 
 
+def create_client(account, password):
+    return Client(account, password)
+
+
 class Client:
     def __init__(self, account, password):
         self.login_token = {'client_id': random.randint(0, 100000), 'account': account, 'password': password}
         self.client = requests.session()
-        self.encrypt = QQEncryptHelper()
 
     def login(self):
         login_check_url = LOGIN_CHECK_URL % self.login_token
@@ -36,18 +39,18 @@ class Client:
             groups = match_non_verified_picture.groups()
             if groups:
                 self.login_token['verify'] = groups[0]
-                self.login_token['uin'] = self.encrypt.uin_hex(groups[1])
+                self.login_token['uin'] = encrypt.uin_hex(groups[1])
 
         match_non_verified_picture = re.match(VERIFIED_CHECK_RESPONSE_REGEX, response_of_check.text)
         if match_non_verified_picture:
             groups = match_non_verified_picture.groups()
             if groups:
-                self.login_token['uin'] = self.encrypt.uin_hex(groups[1])
+                self.login_token['uin'] = encrypt.uin_hex(groups[1])
                 response_of_verify_picture = self.client.get(VERIFY_CODE_URL % self.login_token, stream=True)
                 self.show_verify_picture(response_of_verify_picture)
                 self.login_token['verify'] = raw_input('Please input verify code:')
 
-        self.login_token['password'] = self.encrypt.calculate_password(self.login_token)
+        self.login_token['password'] = encrypt.calculate_password(self.login_token)
 
         response_of_first_login = self.client.get(FIRST_LOGIN_URL % self.login_token)
         self.login_token['web_qq_id'] = response_of_first_login.cookies['ptwebqq']
@@ -65,7 +68,7 @@ class Client:
             self.login_token['session_id'] = login_data['result']['psessionid']
             self.login_token['runtime_id'] = login_data['result']['vfwebqq']
 
-            return {'token': self.login_token, 'client': self.client}
+        return {'token': self.login_token, 'client': self.client}
 
 
     def show_verify_picture(self, response_of_verify_picture):

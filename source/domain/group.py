@@ -17,6 +17,5 @@ class Group:
             'clientid': self.token['client_id'],
             'psessionid': self.token['session_id']
         }
-        print data
         response_for_send_group_message = self.client.post('http://d.web2.qq.com/channel/send_qun_msg2', data=data, headers=headers)
         print response_for_send_group_message.text

@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-
-import sys
-
 from domain.qq import QQ
-from protocol.client import Client
+from protocol import client
+from source.protocol import database
 
 
 def start():
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
+    database.initialize()
 
-    print 'System Encoding: ' + sys.getdefaultencoding()
-
-    client_logon = Client('2519749218', 'lichking123').login()
-
-    qq = QQ(client_logon)
+    qq_client = client.create_client('2519749218', 'lichking123')
+    qq = QQ(qq_client.login())
     qq.load_groups()
     qq.handle_message()
 

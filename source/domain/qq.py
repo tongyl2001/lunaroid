@@ -3,6 +3,7 @@ import json
 import random
 import re
 from group import Group
+import message
 
 
 class QQ:
@@ -34,19 +35,4 @@ class QQ:
             }
             response_of_poll = self.client.post('http://d.web2.qq.com/channel/poll2', data=data, headers=headers)
             messages_data = json.loads(response_of_poll.text)
-            if messages_data['result']:
-                for message_data in messages_data['result']:
-                    if message_data['poll_type'] == 'group_message':
-                        content = message_data['value']['content']
-                        print content
-                        joke_request_matches = re.match('(.{0,5})是什么\?'.decode('utf-8'), content[len(content)-1])
-                        if joke_request_matches:
-                            target_name = joke_request_matches.group(1)
-                            jokes_data = json.loads(open('json/jokes.json').read())
-                            jokes = jokes_data['jokes']
-                            joke = jokes[random.randint(0, len(jokes) - 1)]
-                            random.seed()
-                            print joke
-                            self.groups[message_data['value']['from_uin']].message(joke % {'name': target_name})
-            else:
-                print messages_data
+            message.dispatch(messages_data, self)
